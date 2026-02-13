@@ -1,0 +1,8 @@
+[package]
+name = "ark-cli"
+version = "0.1.0"
+edition = "2024"
+description = "CLI client for Ark version control system"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }

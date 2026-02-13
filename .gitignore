@@ -1,0 +1,78 @@
+# =========================
+# Elixir / Phoenix
+# =========================
+/_build/
+/deps/
+*.ez
+*.beam
+/server/_build/
+/server/deps/
+/server/*.ez
+
+# Generated on crash by the VM
+erl_crash.dump
+
+# Mix archives
+/server/.fetch
+
+# Dialyzer PLTs
+/server/priv/plts/
+
+# Phoenix static artifacts
+/server/priv/static/
+
+# =========================
+# Ecto / Database
+# =========================
+*.db
+*.db-journal
+
+# =========================
+# Rust
+# =========================
+/cli/target/
+**/*.rs.bk
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+.docker/
+
+# =========================
+# Storage (blob store)
+# =========================
+/ark_storage/
+
+# =========================
+# IDE / Editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =========================
+# Environment
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# OS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# Claude
+# =========================
+.claude/
