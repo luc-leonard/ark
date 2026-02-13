@@ -2,31 +2,36 @@ defmodule Ark.LockManager do
   @moduledoc """
   Manages exclusive file locks for Ark.
 
-  Provides a GenServer-based locking mechanism to ensure
-  only one user can modify a given file path at a time.
+  Delegates lock operations to the database via Ecto.
+  The GenServer serializes lock acquisition to prevent race conditions.
   """
 
   use GenServer
 
+  alias Ark.Repo
+  alias Ark.Versioning.Lock
+
+  import Ecto.Query
+
   # Client API
 
   def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  @doc "Acquire an exclusive lock on `path` for `user`."
-  def acquire(path, user) do
-    GenServer.call(__MODULE__, {:acquire, path, user})
+  @doc "Acquire an exclusive lock on `path` for `user_id` in `repository_id`."
+  def acquire(repository_id, path, user_id) do
+    GenServer.call(__MODULE__, {:acquire, repository_id, path, user_id})
   end
 
-  @doc "Release the lock on `path`."
-  def release(path) do
-    GenServer.call(__MODULE__, {:release, path})
+  @doc "Release the lock on `path` in `repository_id`."
+  def release(repository_id, path) do
+    GenServer.call(__MODULE__, {:release, repository_id, path})
   end
 
-  @doc "List all current locks."
-  def list_locks do
-    GenServer.call(__MODULE__, :list)
+  @doc "List all current locks for `repository_id`."
+  def list_locks(repository_id) do
+    GenServer.call(__MODULE__, {:list, repository_id})
   end
 
   # Server callbacks
@@ -37,31 +42,51 @@ defmodule Ark.LockManager do
   end
 
   @impl true
-  def handle_call({:acquire, path, user}, _from, locks) do
-    case Map.get(locks, path) do
+  def handle_call({:acquire, repository_id, path, user_id}, _from, state) do
+    case Repo.one(lock_query(repository_id, path)) do
       nil ->
-        {:reply, :ok, Map.put(locks, path, user)}
+        changeset =
+          Lock.create_changeset(%Lock{}, %{
+            path: path,
+            repository_id: repository_id,
+            user_id: user_id
+          })
 
-      ^user ->
-        {:reply, :ok, locks}
+        case Repo.insert(changeset) do
+          {:ok, _lock} -> {:reply, :ok, state}
+          {:error, _changeset} -> {:reply, {:error, :insert_failed}, state}
+        end
 
-      holder ->
-        {:reply, {:error, :already_locked, holder}, locks}
+      %Lock{user_id: ^user_id} ->
+        {:reply, :ok, state}
+
+      %Lock{user_id: holder_id} ->
+        {:reply, {:error, :already_locked, holder_id}, state}
     end
   end
 
   @impl true
-  def handle_call({:release, path}, _from, locks) do
-    {:reply, :ok, Map.delete(locks, path)}
+  def handle_call({:release, repository_id, path}, _from, state) do
+    case Repo.one(lock_query(repository_id, path)) do
+      nil -> :ok
+      lock -> Repo.delete(lock)
+    end
+
+    {:reply, :ok, state}
   end
 
   @impl true
-  def handle_call(:list, _from, locks) do
-    entries =
-      Enum.map(locks, fn {path, user} ->
-        %{path: path, user: user}
-      end)
+  def handle_call({:list, repository_id}, _from, state) do
+    locks =
+      Lock
+      |> where([l], l.repository_id == ^repository_id)
+      |> Repo.all()
 
-    {:reply, entries, locks}
+    {:reply, locks, state}
+  end
+
+  defp lock_query(repository_id, path) do
+    Lock
+    |> where([l], l.repository_id == ^repository_id and l.path == ^path)
   end
 end
