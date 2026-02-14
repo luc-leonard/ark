@@ -12,9 +12,5 @@ defmodule ArkWeb.Router do
     pipe_through :api
 
     resources "/files", FileController, only: [:index, :show, :create]
-
-    post "/locks", LockController, :create
-    delete "/locks/:path", LockController, :delete
-    get "/locks", LockController, :index
   end
 end
