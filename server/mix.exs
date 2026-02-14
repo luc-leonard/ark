@@ -60,6 +60,9 @@ defmodule Ark.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
 
+      # Architecture
+      {:boundary, "~> 0.10", runtime: false},
+
       # Code quality
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

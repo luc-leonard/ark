@@ -27,9 +27,8 @@ defmodule Ark.Accounts.ApiKey do
 
   def create_changeset(api_key, attrs) do
     api_key
-    |> cast(attrs, [:key_hash, :key_prefix, :name, :scopes, :expires_at, :user_id])
+    |> cast(attrs, [:name, :scopes, :expires_at])
     |> validate_required([:key_hash, :key_prefix, :name, :scopes, :expires_at, :user_id])
-    |> validate_length(:key_prefix, is: 8)
     |> validate_length(:scopes, min: 1)
     |> foreign_key_constraint(:user_id)
     |> unique_constraint(:key_hash)

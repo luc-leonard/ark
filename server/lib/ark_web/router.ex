@@ -5,11 +5,15 @@ defmodule ArkWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :authenticated do
+    plug ArkWeb.Plugs.ApiAuth
+  end
+
   # Health check — outside API namespace for K8s probes
   get "/health", ArkWeb.HealthController, :index
 
   scope "/api/v1", ArkWeb do
-    pipe_through :api
+    pipe_through [:api, :authenticated]
 
     resources "/files", FileController, only: [:index, :show, :create]
 

@@ -8,20 +8,28 @@ defmodule Ark.Accounts.ApiKeyTest do
     {:ok, user: user}
   end
 
-  defp valid_attrs(user_id) do
-    %{
-      key_hash: :crypto.hash(:sha256, "raw-token") |> Base.encode16(case: :lower),
-      key_prefix: "ark_1234",
-      name: "CLI laptop",
-      scopes: [:repo_read, :repo_write],
-      expires_at: DateTime.utc_now() |> DateTime.add(30, :day) |> DateTime.truncate(:second),
-      user_id: user_id
-    }
+  defp build_api_key(user_id, overrides \\ %{}) do
+    attrs =
+      Map.merge(
+        %{
+          name: "CLI laptop",
+          scopes: [:repo_read, :repo_write],
+          expires_at: DateTime.utc_now() |> DateTime.add(30, :day) |> DateTime.truncate(:second)
+        },
+        overrides
+      )
+
+    hash =
+      :crypto.hash(:sha256, "raw-token-#{System.unique_integer([:positive])}")
+      |> Base.encode16(case: :lower)
+
+    %ApiKey{user_id: user_id, key_hash: hash, key_prefix: "ark_1234"}
+    |> ApiKey.create_changeset(attrs)
   end
 
   describe "create_changeset/2" do
     test "valid attrs", %{user: user} do
-      changeset = ApiKey.create_changeset(%ApiKey{}, valid_attrs(user.id))
+      changeset = build_api_key(user.id)
       assert changeset.valid?
     end
 
@@ -38,25 +46,25 @@ defmodule Ark.Accounts.ApiKeyTest do
              } = errors_on(changeset)
     end
 
-    test "validates key_prefix length", %{user: user} do
-      attrs = valid_attrs(user.id) |> Map.put(:key_prefix, "short")
-      changeset = ApiKey.create_changeset(%ApiKey{}, attrs)
-      assert %{key_prefix: [_]} = errors_on(changeset)
-    end
-
     test "enforces unique key_hash", %{user: user} do
-      attrs = valid_attrs(user.id)
-      {:ok, _} = Repo.insert(ApiKey.create_changeset(%ApiKey{}, attrs))
+      {:ok, existing} = Repo.insert(build_api_key(user.id))
 
-      attrs2 = %{attrs | name: "other key", key_prefix: "ark_5678"}
-      {:error, changeset} = Repo.insert(ApiKey.create_changeset(%ApiKey{}, attrs2))
+      changeset =
+        %ApiKey{user_id: user.id, key_hash: existing.key_hash, key_prefix: "ark_5678"}
+        |> ApiKey.create_changeset(%{
+          name: "other key",
+          scopes: [:repo_read],
+          expires_at: DateTime.utc_now() |> DateTime.add(30, :day) |> DateTime.truncate(:second)
+        })
+
+      {:error, changeset} = Repo.insert(changeset)
       assert %{key_hash: ["has already been taken"]} = errors_on(changeset)
     end
   end
 
   describe "revoke_changeset/1" do
     test "sets revoked_at", %{user: user} do
-      {:ok, api_key} = Repo.insert(ApiKey.create_changeset(%ApiKey{}, valid_attrs(user.id)))
+      {:ok, api_key} = Repo.insert(build_api_key(user.id))
       changeset = ApiKey.revoke_changeset(api_key)
       assert changeset.valid?
       assert changeset.changes.revoked_at
@@ -65,7 +73,7 @@ defmodule Ark.Accounts.ApiKeyTest do
 
   describe "rotate_changeset/2" do
     test "valid rotation attrs", %{user: user} do
-      {:ok, api_key} = Repo.insert(ApiKey.create_changeset(%ApiKey{}, valid_attrs(user.id)))
+      {:ok, api_key} = Repo.insert(build_api_key(user.id))
 
       attrs = %{
         auto_rotated_key_hash: :crypto.hash(:sha256, "new-token") |> Base.encode16(case: :lower),
@@ -78,7 +86,7 @@ defmodule Ark.Accounts.ApiKeyTest do
     end
 
     test "requires rotation fields", %{user: user} do
-      {:ok, api_key} = Repo.insert(ApiKey.create_changeset(%ApiKey{}, valid_attrs(user.id)))
+      {:ok, api_key} = Repo.insert(build_api_key(user.id))
       changeset = ApiKey.rotate_changeset(api_key, %{})
 
       assert %{
