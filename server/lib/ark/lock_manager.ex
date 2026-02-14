@@ -8,6 +8,8 @@ defmodule Ark.LockManager do
 
   use GenServer
 
+  require Logger
+
   alias Ark.Repo
   alias Ark.Versioning.Lock
 
@@ -15,30 +17,31 @@ defmodule Ark.LockManager do
 
   # Client API
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(opts \\ []) do
+    name = Keyword.get(opts, :name, __MODULE__)
+    GenServer.start_link(__MODULE__, :no_state, name: name)
   end
 
   @doc "Acquire an exclusive lock on `path` for `user_id` in `repository_id`."
-  def acquire(repository_id, path, user_id) do
-    GenServer.call(__MODULE__, {:acquire, repository_id, path, user_id})
+  def acquire(server \\ __MODULE__, repository_id, path, user_id) do
+    GenServer.call(server, {:acquire, repository_id, path, user_id})
   end
 
   @doc "Release the lock on `path` in `repository_id`."
-  def release(repository_id, path) do
-    GenServer.call(__MODULE__, {:release, repository_id, path})
+  def release(server \\ __MODULE__, repository_id, path) do
+    GenServer.call(server, {:release, repository_id, path})
   end
 
   @doc "List all current locks for `repository_id`."
-  def list_locks(repository_id) do
-    GenServer.call(__MODULE__, {:list, repository_id})
+  def list_locks(server \\ __MODULE__, repository_id) do
+    GenServer.call(server, {:list, repository_id})
   end
 
   # Server callbacks
 
   @impl true
-  def init(_opts) do
-    {:ok, %{}}
+  def init(:no_state) do
+    {:ok, :no_state}
   end
 
   @impl true
@@ -68,8 +71,17 @@ defmodule Ark.LockManager do
   @impl true
   def handle_call({:release, repository_id, path}, _from, state) do
     case Repo.one(lock_query(repository_id, path)) do
-      nil -> :ok
-      lock -> Repo.delete(lock)
+      nil ->
+        :ok
+
+      lock ->
+        case Repo.delete(lock) do
+          {:ok, _} ->
+            :ok
+
+          {:error, changeset} ->
+            Logger.error("Failed to release lock on #{path}: #{inspect(changeset.errors)}")
+        end
     end
 
     {:reply, :ok, state}

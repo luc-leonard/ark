@@ -68,11 +68,9 @@ defmodule Ark.Accounts.ApiKeyTest do
       {:ok, api_key} = Repo.insert(ApiKey.create_changeset(%ApiKey{}, valid_attrs(user.id)))
 
       attrs = %{
-        auto_rotated_key_hash:
-          :crypto.hash(:sha256, "new-token") |> Base.encode16(case: :lower),
+        auto_rotated_key_hash: :crypto.hash(:sha256, "new-token") |> Base.encode16(case: :lower),
         auto_rotated_key_prefix: "ark_newk",
-        auto_rotate_at:
-          DateTime.utc_now() |> DateTime.add(7, :day) |> DateTime.truncate(:second)
+        auto_rotate_at: DateTime.utc_now() |> DateTime.add(7, :day) |> DateTime.truncate(:second)
       }
 
       changeset = ApiKey.rotate_changeset(api_key, attrs)

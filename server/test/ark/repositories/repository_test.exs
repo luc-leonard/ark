@@ -34,9 +34,7 @@ defmodule Ark.Repositories.RepositoryTest do
       {:ok, _} = Repo.insert(Repository.create_changeset(%Repository{}, attrs))
 
       {:error, changeset} =
-        Repo.insert(
-          Repository.create_changeset(%Repository{}, %{attrs | storage_path: "/other"})
-        )
+        Repo.insert(Repository.create_changeset(%Repository{}, %{attrs | storage_path: "/other"}))
 
       assert %{name: ["has already been taken"]} = errors_on(changeset)
     end

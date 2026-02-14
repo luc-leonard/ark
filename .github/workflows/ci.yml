@@ -62,8 +62,11 @@ jobs:
       - name: Sobelow
         run: mix sobelow --config
 
+      - name: Audit dependencies
+        run: mix deps.audit
+
       - name: Tests
-        run: mix test
+        run: mix coveralls
         env:
           MIX_ENV: test
 

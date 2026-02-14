@@ -2,7 +2,10 @@ defmodule ArkWeb.LockController do
   use ArkWeb, :controller
 
   def index(conn, %{"repository_id" => repository_id}) do
-    locks = Ark.LockManager.list_locks(repository_id)
+    locks =
+      Ark.LockManager.list_locks(repository_id)
+      |> Enum.map(&%{id: &1.id, path: &1.path, user_id: &1.user_id, locked_at: &1.inserted_at})
+
     json(conn, %{data: locks})
   end
 

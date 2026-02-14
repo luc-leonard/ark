@@ -70,9 +70,7 @@ defmodule Ark.Versioning.RevisionTest do
       {:ok, _} = Repo.insert(Revision.create_changeset(%Revision{}, attrs))
 
       {:error, changeset} =
-        Repo.insert(
-          Revision.create_changeset(%Revision{}, Map.put(attrs, :message, "dup"))
-        )
+        Repo.insert(Revision.create_changeset(%Revision{}, Map.put(attrs, :message, "dup")))
 
       assert %{repository_id: ["has already been taken"]} = errors_on(changeset)
     end
