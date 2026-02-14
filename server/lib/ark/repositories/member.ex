@@ -21,7 +21,6 @@ defmodule Ark.Repositories.Member do
     member
     |> cast(attrs, [:role])
     |> validate_required([:role, :repository_id, :user_id])
-    |> validate_inclusion(:role, @roles)
     |> foreign_key_constraint(:repository_id)
     |> foreign_key_constraint(:user_id)
     |> unique_constraint([:repository_id, :user_id])

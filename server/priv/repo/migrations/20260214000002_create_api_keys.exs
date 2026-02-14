@@ -14,7 +14,7 @@ defmodule Ark.Repo.Migrations.CreateApiKeys do
       add :auto_rotated_key_prefix, :string
       add :auto_rotate_at, :utc_datetime
       add :revoked_at, :utc_datetime
-      add :user_id, references(:users, type: :binary_id), null: false
+      add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime, updated_at: false)
     end

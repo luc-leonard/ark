@@ -39,6 +39,22 @@ defmodule Ark.Versioning.LockTest do
              } = errors_on(changeset)
     end
 
+    test "rejects absolute path", %{user: user, repo: repo} do
+      changeset =
+        %Lock{repository_id: repo.id, user_id: user.id}
+        |> Lock.create_changeset(%{path: "/etc/passwd"})
+
+      assert %{path: ["must be a relative path"]} = errors_on(changeset)
+    end
+
+    test "rejects path traversal", %{user: user, repo: repo} do
+      changeset =
+        %Lock{repository_id: repo.id, user_id: user.id}
+        |> Lock.create_changeset(%{path: "models/../../etc/passwd"})
+
+      assert %{path: ["must not contain path traversal"]} = errors_on(changeset)
+    end
+
     test "enforces unique {repository_id, path}", %{user: user, repo: repo} do
       {:ok, _} =
         Repo.insert(

@@ -32,6 +32,11 @@ defmodule Ark.Repositories.RepositoryTest do
              } = errors_on(changeset)
     end
 
+    test "rejects storage_path with path traversal", %{user: user} do
+      changeset = valid_changeset(user.id, %{storage_path: "/data/../../../etc/passwd"})
+      assert %{storage_path: ["must not contain path traversal"]} = errors_on(changeset)
+    end
+
     test "enforces unique name", %{user: user} do
       {:ok, _} = Repo.insert(valid_changeset(user.id))
 

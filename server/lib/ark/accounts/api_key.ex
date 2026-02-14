@@ -34,9 +34,9 @@ defmodule Ark.Accounts.ApiKey do
     |> unique_constraint(:key_hash)
   end
 
-  def revoke_changeset(api_key) do
+  def revoke_changeset(api_key, now \\ DateTime.utc_now()) do
     api_key
-    |> change(revoked_at: DateTime.utc_now() |> DateTime.truncate(:second))
+    |> change(revoked_at: DateTime.truncate(now, :second))
   end
 
   def rotate_changeset(api_key, attrs) do

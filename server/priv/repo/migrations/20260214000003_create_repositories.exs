@@ -7,12 +7,12 @@ defmodule Ark.Repo.Migrations.CreateRepositories do
       add :name, :string, null: false
       add :description, :string
       add :storage_path, :string, null: false
-      add :owner_id, references(:users, type: :binary_id), null: false
+      add :owner_id, references(:users, type: :binary_id, on_delete: :restrict), null: false
 
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:repositories, [:name])
+    create unique_index(:repositories, [:owner_id, :name])
     create index(:repositories, [:owner_id])
   end
 end

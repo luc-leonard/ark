@@ -1,6 +1,7 @@
 defmodule Ark.Repositories.Repository do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ark.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -25,6 +26,7 @@ defmodule Ark.Repositories.Repository do
     |> cast(attrs, [:name, :description, :storage_path])
     |> validate_required([:name, :storage_path, :owner_id])
     |> validate_length(:name, min: 1, max: 255)
+    |> validate_safe_path(:storage_path)
     |> foreign_key_constraint(:owner_id)
     |> unique_constraint([:owner_id, :name], error_key: :name)
   end
@@ -34,6 +36,7 @@ defmodule Ark.Repositories.Repository do
     |> cast(attrs, [:name, :description, :storage_path])
     |> validate_required([:name, :storage_path])
     |> validate_length(:name, min: 1, max: 255)
+    |> validate_safe_path(:storage_path)
     |> unique_constraint([:owner_id, :name], error_key: :name)
   end
 end

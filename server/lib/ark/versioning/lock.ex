@@ -1,6 +1,7 @@
 defmodule Ark.Versioning.Lock do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ark.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -19,6 +20,7 @@ defmodule Ark.Versioning.Lock do
     lock
     |> cast(attrs, [:path])
     |> validate_required([:path, :repository_id, :user_id])
+    |> validate_relative_path(:path)
     |> foreign_key_constraint(:repository_id)
     |> foreign_key_constraint(:user_id)
     |> unique_constraint([:repository_id, :path])

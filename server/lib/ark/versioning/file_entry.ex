@@ -1,6 +1,7 @@
 defmodule Ark.Versioning.FileEntry do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ark.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -23,6 +24,7 @@ defmodule Ark.Versioning.FileEntry do
     file_entry
     |> cast(attrs, [:path, :content_hash, :size, :action])
     |> validate_required([:path, :content_hash, :size, :action, :revision_id])
+    |> validate_relative_path(:path)
     |> validate_number(:size, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:revision_id)
     |> unique_constraint([:revision_id, :path])

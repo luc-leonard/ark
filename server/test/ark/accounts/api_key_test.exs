@@ -62,8 +62,16 @@ defmodule Ark.Accounts.ApiKeyTest do
     end
   end
 
-  describe "revoke_changeset/1" do
-    test "sets revoked_at", %{user: user} do
+  describe "revoke_changeset/2" do
+    test "sets revoked_at to given timestamp", %{user: user} do
+      {:ok, api_key} = Repo.insert(build_api_key(user.id))
+      now = ~U[2026-06-15 12:00:00Z]
+      changeset = ApiKey.revoke_changeset(api_key, now)
+      assert changeset.valid?
+      assert changeset.changes.revoked_at == now
+    end
+
+    test "defaults to current time", %{user: user} do
       {:ok, api_key} = Repo.insert(build_api_key(user.id))
       changeset = ApiKey.revoke_changeset(api_key)
       assert changeset.valid?

@@ -8,11 +8,13 @@ defmodule Ark.Repo.Migrations.CreateFileEntries do
       add :content_hash, :string, null: false
       add :size, :bigint, null: false
       add :action, :string, null: false
-      add :revision_id, references(:revisions, type: :binary_id), null: false
+
+      add :revision_id, references(:revisions, type: :binary_id, on_delete: :delete_all),
+        null: false
 
       timestamps(type: :utc_datetime, updated_at: false)
     end
 
-    create index(:file_entries, [:revision_id, :path])
+    create unique_index(:file_entries, [:revision_id, :path])
   end
 end

@@ -56,6 +56,26 @@ defmodule Ark.Versioning.FileEntryTest do
              } = errors_on(changeset)
     end
 
+    test "rejects absolute path", %{revision: revision} do
+      attrs = Map.put(valid_attrs(), :path, "/etc/passwd")
+
+      changeset =
+        %FileEntry{revision_id: revision.id}
+        |> FileEntry.create_changeset(attrs)
+
+      assert %{path: ["must be a relative path"]} = errors_on(changeset)
+    end
+
+    test "rejects path traversal", %{revision: revision} do
+      attrs = Map.put(valid_attrs(), :path, "textures/../../etc/passwd")
+
+      changeset =
+        %FileEntry{revision_id: revision.id}
+        |> FileEntry.create_changeset(attrs)
+
+      assert %{path: ["must not contain path traversal"]} = errors_on(changeset)
+    end
+
     test "validates size >= 0", %{revision: revision} do
       attrs = Map.put(valid_attrs(), :size, -1)
 
