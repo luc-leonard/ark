@@ -22,7 +22,7 @@ defmodule Ark.Repositories.Repository do
     |> validate_required([:name, :storage_path, :owner_id])
     |> validate_length(:name, min: 1, max: 255)
     |> foreign_key_constraint(:owner_id)
-    |> unique_constraint(:name)
+    |> unique_constraint([:owner_id, :name], error_key: :name)
   end
 
   def update_changeset(repository, attrs) do
@@ -30,6 +30,6 @@ defmodule Ark.Repositories.Repository do
     |> cast(attrs, [:name, :description, :storage_path])
     |> validate_required([:name, :storage_path])
     |> validate_length(:name, min: 1, max: 255)
-    |> unique_constraint(:name)
+    |> unique_constraint([:owner_id, :name], error_key: :name)
   end
 end

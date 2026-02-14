@@ -25,5 +25,6 @@ defmodule Ark.Versioning.FileEntry do
     |> validate_required([:path, :content_hash, :size, :action, :revision_id])
     |> validate_number(:size, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:revision_id)
+    |> unique_constraint([:revision_id, :path])
   end
 end
