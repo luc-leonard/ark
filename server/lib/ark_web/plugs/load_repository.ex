@@ -43,4 +43,9 @@ defmodule ArkWeb.Plugs.LoadRepository do
         end
     end
   end
+
+  @impl true
+  def call(_conn, _opts) do
+    raise "LoadRepository requires repository_id in params"
+  end
 end

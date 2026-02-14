@@ -31,6 +31,34 @@ defmodule Ark.ChangesetTest do
       assert (changeset("models/.hidden") |> validate_relative_path(:path)).valid?
       assert (changeset("a/b.c/d") |> validate_relative_path(:path)).valid?
     end
+
+    test "normalizes leading ./" do
+      cs = changeset("./file.fbx") |> validate_relative_path(:path)
+      assert cs.valid?
+      assert get_change(cs, :path) == "file.fbx"
+    end
+
+    test "normalizes double slashes" do
+      cs = changeset("models//hero.fbx") |> validate_relative_path(:path)
+      assert cs.valid?
+      assert get_change(cs, :path) == "models/hero.fbx"
+    end
+
+    test "normalizes trailing slash" do
+      cs = changeset("models/textures/") |> validate_relative_path(:path)
+      assert cs.valid?
+      assert get_change(cs, :path) == "models/textures"
+    end
+
+    test "normalizes combined issues" do
+      cs = changeset("./a//b///c/") |> validate_relative_path(:path)
+      assert cs.valid?
+      assert get_change(cs, :path) == "a/b/c"
+    end
+
+    test "rejects traversal even after normalization" do
+      refute (changeset("./../../etc") |> validate_relative_path(:path)).valid?
+    end
   end
 
   describe "validate_safe_path/2" do

@@ -6,7 +6,9 @@ defmodule Ark.Changeset do
   @path_traversal_pattern ~r"(^|/)\.\.(/|$)"
 
   def validate_relative_path(changeset, field) do
-    validate_change(changeset, field, fn _, value ->
+    changeset
+    |> normalize_path(field)
+    |> validate_change(field, fn _, value ->
       cond do
         String.starts_with?(value, "/") ->
           [{field, "must be a relative path"}]
@@ -18,6 +20,22 @@ defmodule Ark.Changeset do
           []
       end
     end)
+  end
+
+  defp normalize_path(changeset, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      value ->
+        normalized =
+          value
+          |> String.replace(~r"/+", "/")
+          |> String.trim_leading("./")
+          |> String.trim_trailing("/")
+
+        put_change(changeset, field, normalized)
+    end
   end
 
   def validate_safe_path(changeset, field) do

@@ -83,7 +83,10 @@ defmodule Ark.LockManager do
   end
 
   defp unique_violation?(errors) do
-    Keyword.has_key?(errors, :path)
+    case Keyword.get_values(errors, :path) do
+      [{msg, _} | _] -> msg =~ "already locked"
+      _ -> false
+    end
   end
 
   defp lock_query(repository_id, path) do

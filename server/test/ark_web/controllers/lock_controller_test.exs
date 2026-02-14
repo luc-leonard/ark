@@ -121,5 +121,35 @@ defmodule ArkWeb.LockControllerTest do
       conn2 = delete(conn2, lock_path(repo.id, lock_id))
       assert %{"error" => "forbidden", "reason" => "not_lock_owner"} = json_response(conn2, 403)
     end
+
+    test "cannot delete own lock via another repository's endpoint", %{
+      conn: conn,
+      user: user,
+      repo: repo
+    } do
+      # Create a lock on repo
+      create_conn = post(conn, locks_path(repo.id), %{path: "file.fbx"})
+      %{"id" => lock_id} = json_response(create_conn, 201)
+
+      # Create another repo where user is also a member
+      {other_repo, _} = setup_repository_with_member(user, name: "other-repo")
+
+      # Try to delete repo's lock via other_repo's endpoint — should be treated as not found
+      del_conn = delete(conn, lock_path(other_repo.id, lock_id))
+      assert %{"unlocked" => true} = json_response(del_conn, 200)
+
+      # Verify the lock still exists on the original repo
+      list_conn = get(conn, locks_path(repo.id))
+      assert %{"data" => [%{"id" => ^lock_id}]} = json_response(list_conn, 200)
+    end
+  end
+
+  describe "POST /api/v1/repositories/:repository_id/locks (validation)" do
+    test "returns 400 when path is missing", %{conn: conn, repo: repo} do
+      conn = post(conn, locks_path(repo.id), %{})
+
+      assert %{"error" => "bad_request", "reason" => "missing_path"} =
+               json_response(conn, 400)
+    end
   end
 end

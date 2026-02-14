@@ -36,11 +36,21 @@ defmodule ArkWeb.LockController do
     end
   end
 
+  def create(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: "bad_request", reason: "missing_path"})
+  end
+
   def delete(conn, %{"id" => id}) do
     user = conn.assigns.current_user
+    repository = conn.assigns.repository
 
     case Ark.LockManager.get_lock(id) do
       nil ->
+        json(conn, %{unlocked: true, id: id})
+
+      %{repository_id: repo_id} when repo_id != repository.id ->
         json(conn, %{unlocked: true, id: id})
 
       %{user_id: user_id} when user_id != user.id ->
