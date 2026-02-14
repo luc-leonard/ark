@@ -1,13 +1,10 @@
 defmodule ArkWeb.LockControllerTest do
-  use ArkWeb.ConnCase, async: false
+  use ArkWeb.ConnCase, async: true
 
   alias Ark.Repo
   alias Ark.Repositories.Repository
-  alias Ecto.Adapters.SQL.Sandbox
 
   setup %{conn: conn} do
-    Sandbox.allow(Repo, self(), Process.whereis(Ark.LockManager))
-
     {authed_conn, user, _api_key, _raw_token} =
       setup_authenticated_conn(conn, username: "lockuser")
 
@@ -16,10 +13,10 @@ defmodule ArkWeb.LockControllerTest do
 
     {:ok, repo} =
       Repo.insert(
-        Repository.create_changeset(%Repository{}, %{
+        %Repository{owner_id: user.id}
+        |> Repository.create_changeset(%{
           name: "test-repo",
-          storage_path: "/data/repos/test",
-          owner_id: user.id
+          storage_path: "/data/repos/test"
         })
       )
 

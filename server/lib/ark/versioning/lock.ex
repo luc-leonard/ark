@@ -17,7 +17,7 @@ defmodule Ark.Versioning.Lock do
 
   def create_changeset(lock, attrs) do
     lock
-    |> cast(attrs, [:path, :repository_id, :user_id])
+    |> cast(attrs, [:path])
     |> validate_required([:path, :repository_id, :user_id])
     |> foreign_key_constraint(:repository_id)
     |> foreign_key_constraint(:user_id)

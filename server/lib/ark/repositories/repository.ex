@@ -18,7 +18,7 @@ defmodule Ark.Repositories.Repository do
 
   def create_changeset(repository, attrs) do
     repository
-    |> cast(attrs, [:name, :description, :storage_path, :owner_id])
+    |> cast(attrs, [:name, :description, :storage_path])
     |> validate_required([:name, :storage_path, :owner_id])
     |> validate_length(:name, min: 1, max: 255)
     |> foreign_key_constraint(:owner_id)

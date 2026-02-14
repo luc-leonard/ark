@@ -10,10 +10,10 @@ defmodule Ark.Versioning.LockTest do
 
     {:ok, repo} =
       Repo.insert(
-        Repository.create_changeset(%Repository{}, %{
+        %Repository{owner_id: user.id}
+        |> Repository.create_changeset(%{
           name: "game",
-          storage_path: "/data/repos/game",
-          owner_id: user.id
+          storage_path: "/data/repos/game"
         })
       )
 
@@ -23,11 +23,8 @@ defmodule Ark.Versioning.LockTest do
   describe "create_changeset/2" do
     test "valid attrs", %{user: user, repo: repo} do
       changeset =
-        Lock.create_changeset(%Lock{}, %{
-          path: "models/character.fbx",
-          repository_id: repo.id,
-          user_id: user.id
-        })
+        %Lock{repository_id: repo.id, user_id: user.id}
+        |> Lock.create_changeset(%{path: "models/character.fbx"})
 
       assert changeset.valid?
     end
@@ -43,12 +40,20 @@ defmodule Ark.Versioning.LockTest do
     end
 
     test "enforces unique {repository_id, path}", %{user: user, repo: repo} do
-      attrs = %{path: "models/character.fbx", repository_id: repo.id, user_id: user.id}
-      {:ok, _} = Repo.insert(Lock.create_changeset(%Lock{}, attrs))
+      {:ok, _} =
+        Repo.insert(
+          %Lock{repository_id: repo.id, user_id: user.id}
+          |> Lock.create_changeset(%{path: "models/character.fbx"})
+        )
 
       {:ok, user2} = Repo.insert(User.create_changeset(%User{}, %{username: "other"}))
-      attrs2 = %{attrs | user_id: user2.id}
-      {:error, changeset} = Repo.insert(Lock.create_changeset(%Lock{}, attrs2))
+
+      {:error, changeset} =
+        Repo.insert(
+          %Lock{repository_id: repo.id, user_id: user2.id}
+          |> Lock.create_changeset(%{path: "models/character.fbx"})
+        )
+
       assert %{repository_id: ["has already been taken"]} = errors_on(changeset)
     end
   end

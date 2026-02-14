@@ -10,10 +10,10 @@ defmodule Ark.Versioning.RevisionTest do
 
     {:ok, repo} =
       Repo.insert(
-        Repository.create_changeset(%Repository{}, %{
+        %Repository{owner_id: user.id}
+        |> Repository.create_changeset(%{
           name: "project",
-          storage_path: "/data/repos/project",
-          owner_id: user.id
+          storage_path: "/data/repos/project"
         })
       )
 
@@ -23,11 +23,10 @@ defmodule Ark.Versioning.RevisionTest do
   describe "create_changeset/2" do
     test "valid attrs", %{user: user, repo: repo} do
       changeset =
-        Revision.create_changeset(%Revision{}, %{
+        %Revision{repository_id: repo.id, author_id: user.id}
+        |> Revision.create_changeset(%{
           revision_number: 1,
-          message: "Initial commit",
-          repository_id: repo.id,
-          author_id: user.id
+          message: "Initial commit"
         })
 
       assert changeset.valid?
@@ -45,32 +44,32 @@ defmodule Ark.Versioning.RevisionTest do
 
     test "message is optional", %{user: user, repo: repo} do
       changeset =
-        Revision.create_changeset(%Revision{}, %{
-          revision_number: 1,
-          repository_id: repo.id,
-          author_id: user.id
-        })
+        %Revision{repository_id: repo.id, author_id: user.id}
+        |> Revision.create_changeset(%{revision_number: 1})
 
       assert changeset.valid?
     end
 
     test "validates revision_number > 0", %{user: user, repo: repo} do
       changeset =
-        Revision.create_changeset(%Revision{}, %{
-          revision_number: 0,
-          repository_id: repo.id,
-          author_id: user.id
-        })
+        %Revision{repository_id: repo.id, author_id: user.id}
+        |> Revision.create_changeset(%{revision_number: 0})
 
       assert %{revision_number: [_]} = errors_on(changeset)
     end
 
     test "enforces unique {repository_id, revision_number}", %{user: user, repo: repo} do
-      attrs = %{revision_number: 1, repository_id: repo.id, author_id: user.id}
-      {:ok, _} = Repo.insert(Revision.create_changeset(%Revision{}, attrs))
+      {:ok, _} =
+        Repo.insert(
+          %Revision{repository_id: repo.id, author_id: user.id}
+          |> Revision.create_changeset(%{revision_number: 1})
+        )
 
       {:error, changeset} =
-        Repo.insert(Revision.create_changeset(%Revision{}, Map.put(attrs, :message, "dup")))
+        Repo.insert(
+          %Revision{repository_id: repo.id, author_id: user.id}
+          |> Revision.create_changeset(%{revision_number: 1, message: "dup"})
+        )
 
       assert %{repository_id: ["has already been taken"]} = errors_on(changeset)
     end

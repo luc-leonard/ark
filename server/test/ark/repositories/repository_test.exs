@@ -9,13 +9,16 @@ defmodule Ark.Repositories.RepositoryTest do
     {:ok, user: user}
   end
 
-  defp valid_attrs(owner_id) do
-    %{name: "my-project", storage_path: "/data/repos/my-project", owner_id: owner_id}
+  defp valid_changeset(owner_id, overrides \\ %{}) do
+    attrs = Map.merge(%{name: "my-project", storage_path: "/data/repos/my-project"}, overrides)
+
+    %Repository{owner_id: owner_id}
+    |> Repository.create_changeset(attrs)
   end
 
   describe "create_changeset/2" do
     test "valid attrs", %{user: user} do
-      changeset = Repository.create_changeset(%Repository{}, valid_attrs(user.id))
+      changeset = valid_changeset(user.id)
       assert changeset.valid?
     end
 
@@ -30,11 +33,10 @@ defmodule Ark.Repositories.RepositoryTest do
     end
 
     test "enforces unique name", %{user: user} do
-      attrs = valid_attrs(user.id)
-      {:ok, _} = Repo.insert(Repository.create_changeset(%Repository{}, attrs))
+      {:ok, _} = Repo.insert(valid_changeset(user.id))
 
       {:error, changeset} =
-        Repo.insert(Repository.create_changeset(%Repository{}, %{attrs | storage_path: "/other"}))
+        Repo.insert(valid_changeset(user.id, %{storage_path: "/other"}))
 
       assert %{name: ["has already been taken"]} = errors_on(changeset)
     end
@@ -42,7 +44,7 @@ defmodule Ark.Repositories.RepositoryTest do
 
   describe "update_changeset/2" do
     test "updates description", %{user: user} do
-      {:ok, repo} = Repo.insert(Repository.create_changeset(%Repository{}, valid_attrs(user.id)))
+      {:ok, repo} = Repo.insert(valid_changeset(user.id))
 
       changeset =
         Repository.update_changeset(repo, %{description: "A game assets repo"})

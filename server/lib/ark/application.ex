@@ -12,7 +12,6 @@ defmodule Ark.Application do
       Ark.Repo,
       {DNSCluster, query: Application.get_env(:ark, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ark.PubSub},
-      Ark.LockManager,
       # Start to serve requests, typically the last entry
       ArkWeb.Endpoint
     ]

@@ -20,7 +20,7 @@ defmodule Ark.Versioning.Revision do
 
   def create_changeset(revision, attrs) do
     revision
-    |> cast(attrs, [:revision_number, :message, :repository_id, :author_id])
+    |> cast(attrs, [:revision_number, :message])
     |> validate_required([:revision_number, :repository_id, :author_id])
     |> validate_number(:revision_number, greater_than: 0)
     |> foreign_key_constraint(:repository_id)
