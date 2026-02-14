@@ -20,10 +20,25 @@ defmodule Ark.Accounts.TokenGenerator do
     :crypto.hash(:sha256, raw_token) |> Base.encode16(case: :lower)
   end
 
-  defp random_base62(n_bytes) do
-    :crypto.strong_rand_bytes(n_bytes)
-    |> :binary.bin_to_list()
-    |> Enum.map(fn byte -> Enum.at(@base62_alphabet, rem(byte, 62)) end)
+  # Maximum byte value that avoids modulo bias: largest multiple of 62 that fits in a byte.
+  @max_unbiased 247
+
+  defp random_base62(count) do
+    do_random_base62(count, [])
     |> List.to_string()
+  end
+
+  defp do_random_base62(0, acc), do: Enum.reverse(acc)
+
+  defp do_random_base62(remaining, acc) do
+    <<byte>> = :crypto.strong_rand_bytes(1)
+
+    if byte <= @max_unbiased do
+      char = Enum.at(@base62_alphabet, rem(byte, 62))
+      do_random_base62(remaining - 1, [char | acc])
+    else
+      # Reject biased values and retry
+      do_random_base62(remaining, acc)
+    end
   end
 end

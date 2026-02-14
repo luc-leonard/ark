@@ -93,5 +93,17 @@ defmodule ArkWeb.LockControllerTest do
       conn = delete(conn, lock_path(repo.id, lock_id))
       assert %{"unlocked" => true, "id" => ^lock_id} = json_response(conn, 200)
     end
+
+    test "returns 403 when deleting another user's lock", %{
+      conn: conn,
+      conn2: conn2,
+      repo: repo
+    } do
+      create_conn = post(conn, locks_path(repo.id), %{path: "file.fbx"})
+      %{"id" => lock_id} = json_response(create_conn, 201)
+
+      conn2 = delete(conn2, lock_path(repo.id, lock_id))
+      assert %{"error" => "forbidden", "reason" => "not_lock_owner"} = json_response(conn2, 403)
+    end
   end
 end

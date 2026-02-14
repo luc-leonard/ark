@@ -52,7 +52,7 @@ docker-compose up             # Lance PostgreSQL 16 + serveur Phoenix
 
 **Stack :** Phoenix 1.8 (API JSON uniquement, pas de HTML/LiveView pour l'instant), Ecto, PostgreSQL 16, Bandit.
 
-**Supervision tree :** `Ark.Application` démarre Telemetry → Repo → DNSCluster → PubSub → `Ark.LockManager` (GenServer) → Endpoint.
+**Supervision tree :** `Ark.Application` démarre Telemetry → Repo → DNSCluster → PubSub → Endpoint.
 
 **Modèle de données (tous les PK sont des UUID binary_id) :**
 - `User` → has_many `ApiKey`, has_many `Repository` (owner)
@@ -62,7 +62,7 @@ docker-compose up             # Lance PostgreSQL 16 + serveur Phoenix
 
 **Routes API :** tout sous `/api/v1` (scope `ArkWeb`, donc les controllers sont `ArkWeb.XxxController` sans alias supplémentaire). Health check sur `GET /health`.
 
-**LockManager :** GenServer qui sérialise les opérations de lock via `GenServer.call/2` pour éviter les race conditions. Persiste en DB via Ecto. Accepte un `server` en premier argument optionnel pour la testabilité (nommage dynamique).
+**LockManager :** Module fonctionnel (pas de GenServer) qui gère les locks exclusifs. L'exclusivité est garantie par une contrainte `UNIQUE` en DB sur `(repository_id, path)`. Les opérations sont des appels DB directs via Ecto.
 
 **Storage :** `Ark.Storage` est un stub prévu pour le blob store content-addressable (SHA-256).
 

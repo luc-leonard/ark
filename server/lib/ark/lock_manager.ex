@@ -14,8 +14,10 @@ defmodule Ark.LockManager do
 
   import Ecto.Query
 
+  @max_retries 1
+
   @doc "Acquire an exclusive lock on `path` for `user_id` in `repository_id`."
-  def acquire(repository_id, path, user_id) do
+  def acquire(repository_id, path, user_id, retries \\ @max_retries) do
     changeset =
       %Lock{repository_id: repository_id, user_id: user_id}
       |> Lock.create_changeset(%{path: path})
@@ -26,11 +28,16 @@ defmodule Ark.LockManager do
 
       {:error, %Ecto.Changeset{errors: errors}} ->
         if unique_violation?(errors) do
-          handle_existing_lock(repository_id, path, user_id)
+          handle_existing_lock(repository_id, path, user_id, retries)
         else
           {:error, :insert_failed}
         end
     end
+  end
+
+  @doc "Get a lock by its ID."
+  def get_lock(lock_id) do
+    Repo.get(Lock, lock_id)
   end
 
   @doc "Release a lock by its ID."
@@ -58,7 +65,7 @@ defmodule Ark.LockManager do
     |> Repo.all()
   end
 
-  defp handle_existing_lock(repository_id, path, user_id) do
+  defp handle_existing_lock(repository_id, path, user_id, retries) do
     case Repo.one(lock_query(repository_id, path)) do
       %Lock{user_id: ^user_id} = lock ->
         {:ok, lock}
@@ -66,9 +73,12 @@ defmodule Ark.LockManager do
       %Lock{user_id: holder_id} ->
         {:error, :already_locked, holder_id}
 
-      nil ->
+      nil when retries > 0 ->
         # Lock was released between our INSERT and SELECT — retry
-        acquire(repository_id, path, user_id)
+        acquire(repository_id, path, user_id, retries - 1)
+
+      nil ->
+        {:error, :insert_failed}
     end
   end
 

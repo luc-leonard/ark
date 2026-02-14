@@ -13,6 +13,9 @@ defmodule Ark.Repositories.Repository do
 
     belongs_to :owner, Ark.Accounts.User
 
+    has_many :revisions, Ark.Versioning.Revision
+    has_many :locks, Ark.Versioning.Lock
+
     timestamps()
   end
 

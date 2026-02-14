@@ -33,7 +33,20 @@ defmodule ArkWeb.LockController do
   end
 
   def delete(conn, %{"id" => id}) do
-    Ark.LockManager.release(id)
-    json(conn, %{unlocked: true, id: id})
+    user = conn.assigns.current_user
+
+    case Ark.LockManager.get_lock(id) do
+      nil ->
+        json(conn, %{unlocked: true, id: id})
+
+      %{user_id: user_id} when user_id != user.id ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "forbidden", reason: "not_lock_owner"})
+
+      _lock ->
+        Ark.LockManager.release(id)
+        json(conn, %{unlocked: true, id: id})
+    end
   end
 end

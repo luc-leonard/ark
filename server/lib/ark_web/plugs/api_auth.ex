@@ -42,4 +42,5 @@ defmodule ArkWeb.Plugs.ApiAuth do
   defp format_reason(:missing_token), do: "missing_token"
   defp format_reason(:expired), do: "token_expired"
   defp format_reason(:revoked), do: "token_revoked"
+  defp format_reason(other), do: to_string(other)
 end

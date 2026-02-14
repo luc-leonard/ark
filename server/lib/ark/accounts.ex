@@ -3,8 +3,6 @@ defmodule Ark.Accounts do
   The Accounts context — manages users and API key authentication.
   """
 
-  use Boundary, deps: [Ark.Repo], exports: [User]
-
   alias Ark.Accounts.{ApiKey, TokenGenerator, User}
   alias Ark.Repo
 
