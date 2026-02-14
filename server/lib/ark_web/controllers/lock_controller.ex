@@ -11,10 +11,10 @@ defmodule ArkWeb.LockController do
 
   def create(conn, %{"repository_id" => repository_id, "path" => path, "user_id" => user_id}) do
     case Ark.LockManager.acquire(repository_id, path, user_id) do
-      :ok ->
+      {:ok, lock} ->
         conn
         |> put_status(:created)
-        |> json(%{locked: true, path: path, user_id: user_id})
+        |> json(%{locked: true, id: lock.id, path: path, user_id: user_id})
 
       {:error, :already_locked, holder_id} ->
         conn
@@ -28,8 +28,8 @@ defmodule ArkWeb.LockController do
     end
   end
 
-  def delete(conn, %{"repository_id" => repository_id, "path" => path}) do
-    Ark.LockManager.release(repository_id, path)
-    json(conn, %{unlocked: true, path: path})
+  def delete(conn, %{"id" => id}) do
+    Ark.LockManager.release(id)
+    json(conn, %{unlocked: true, id: id})
   end
 end

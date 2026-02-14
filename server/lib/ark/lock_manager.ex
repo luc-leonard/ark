@@ -27,9 +27,9 @@ defmodule Ark.LockManager do
     GenServer.call(server, {:acquire, repository_id, path, user_id})
   end
 
-  @doc "Release the lock on `path` in `repository_id`."
-  def release(server \\ __MODULE__, repository_id, path) do
-    GenServer.call(server, {:release, repository_id, path})
+  @doc "Release a lock by its ID."
+  def release(server \\ __MODULE__, lock_id) do
+    GenServer.call(server, {:release, lock_id})
   end
 
   @doc "List all current locks for `repository_id`."
@@ -56,12 +56,12 @@ defmodule Ark.LockManager do
           })
 
         case Repo.insert(changeset) do
-          {:ok, _lock} -> {:reply, :ok, state}
+          {:ok, lock} -> {:reply, {:ok, lock}, state}
           {:error, _changeset} -> {:reply, {:error, :insert_failed}, state}
         end
 
-      %Lock{user_id: ^user_id} ->
-        {:reply, :ok, state}
+      %Lock{user_id: ^user_id} = lock ->
+        {:reply, {:ok, lock}, state}
 
       %Lock{user_id: holder_id} ->
         {:reply, {:error, :already_locked, holder_id}, state}
@@ -69,8 +69,8 @@ defmodule Ark.LockManager do
   end
 
   @impl true
-  def handle_call({:release, repository_id, path}, _from, state) do
-    case Repo.one(lock_query(repository_id, path)) do
+  def handle_call({:release, lock_id}, _from, state) do
+    case Repo.get(Lock, lock_id) do
       nil ->
         :ok
 
@@ -80,7 +80,7 @@ defmodule Ark.LockManager do
             :ok
 
           {:error, changeset} ->
-            Logger.error("Failed to release lock on #{path}: #{inspect(changeset.errors)}")
+            Logger.error("Failed to release lock #{lock_id}: #{inspect(changeset.errors)}")
         end
     end
 

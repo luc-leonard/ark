@@ -32,16 +32,19 @@ defmodule Ark.LockManagerTest do
 
   describe "acquire/4" do
     test "acquires a lock on a free path", ctx do
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert {:ok, lock} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert lock.path == "file.fbx"
+      assert lock.user_id == ctx.user.id
     end
 
     test "is idempotent for the same user", ctx do
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert {:ok, lock1} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert {:ok, lock2} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert lock1.id == lock2.id
     end
 
     test "rejects lock when held by another user", ctx do
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert {:ok, _lock} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
 
       assert {:error, :already_locked, holder_id} =
                LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user2.id)
@@ -50,26 +53,26 @@ defmodule Ark.LockManagerTest do
     end
 
     test "allows different paths to be locked independently", ctx do
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "a.fbx", ctx.user.id)
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "b.fbx", ctx.user2.id)
+      assert {:ok, _} = LockManager.acquire(ctx.name, ctx.repo.id, "a.fbx", ctx.user.id)
+      assert {:ok, _} = LockManager.acquire(ctx.name, ctx.repo.id, "b.fbx", ctx.user2.id)
     end
   end
 
-  describe "release/3" do
+  describe "release/2" do
     test "releases an existing lock", ctx do
-      :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
-      assert :ok = LockManager.release(ctx.name, ctx.repo.id, "file.fbx")
+      {:ok, lock} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      assert :ok = LockManager.release(ctx.name, lock.id)
       assert [] = LockManager.list_locks(ctx.name, ctx.repo.id)
     end
 
     test "is safe to call on a non-existent lock", ctx do
-      assert :ok = LockManager.release(ctx.name, ctx.repo.id, "nonexistent.fbx")
+      assert :ok = LockManager.release(ctx.name, Ecto.UUID.generate())
     end
 
     test "allows re-acquisition after release", ctx do
-      :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
-      :ok = LockManager.release(ctx.name, ctx.repo.id, "file.fbx")
-      assert :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user2.id)
+      {:ok, lock} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      :ok = LockManager.release(ctx.name, lock.id)
+      assert {:ok, _} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user2.id)
     end
   end
 
@@ -79,8 +82,8 @@ defmodule Ark.LockManagerTest do
     end
 
     test "returns all locks for a repository", ctx do
-      :ok = LockManager.acquire(ctx.name, ctx.repo.id, "a.fbx", ctx.user.id)
-      :ok = LockManager.acquire(ctx.name, ctx.repo.id, "b.fbx", ctx.user2.id)
+      {:ok, _} = LockManager.acquire(ctx.name, ctx.repo.id, "a.fbx", ctx.user.id)
+      {:ok, _} = LockManager.acquire(ctx.name, ctx.repo.id, "b.fbx", ctx.user2.id)
 
       locks = LockManager.list_locks(ctx.name, ctx.repo.id)
       paths = Enum.map(locks, & &1.path) |> Enum.sort()
@@ -98,8 +101,8 @@ defmodule Ark.LockManagerTest do
           })
         )
 
-      :ok = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
-      :ok = LockManager.acquire(ctx.name, other_repo.id, "other.fbx", ctx.user.id)
+      {:ok, _} = LockManager.acquire(ctx.name, ctx.repo.id, "file.fbx", ctx.user.id)
+      {:ok, _} = LockManager.acquire(ctx.name, other_repo.id, "other.fbx", ctx.user.id)
 
       locks = LockManager.list_locks(ctx.name, ctx.repo.id)
       assert length(locks) == 1

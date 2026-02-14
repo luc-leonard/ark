@@ -14,7 +14,7 @@ defmodule ArkWeb.Router do
     resources "/files", FileController, only: [:index, :show, :create]
 
     post "/locks", LockController, :create
-    delete "/locks/:path", LockController, :delete
+    delete "/locks/:id", LockController, :delete
     get "/locks", LockController, :index
   end
 end

@@ -37,7 +37,7 @@ defmodule ArkWeb.LockControllerTest do
           user_id: user.id
         })
 
-      assert %{"locked" => true, "path" => "file.fbx"} = json_response(conn, 201)
+      assert %{"locked" => true, "id" => _id, "path" => "file.fbx"} = json_response(conn, 201)
     end
 
     test "returns 409 when already locked by another user", %{
@@ -76,12 +76,19 @@ defmodule ArkWeb.LockControllerTest do
     end
   end
 
-  describe "DELETE /api/v1/locks/:path" do
+  describe "DELETE /api/v1/locks/:id" do
     test "releases a lock", %{conn: conn, user: user, repo: repo} do
-      post(conn, "/api/v1/locks", %{repository_id: repo.id, path: "file.fbx", user_id: user.id})
+      create_conn =
+        post(conn, "/api/v1/locks", %{
+          repository_id: repo.id,
+          path: "file.fbx",
+          user_id: user.id
+        })
 
-      conn = delete(conn, "/api/v1/locks/file.fbx", %{repository_id: repo.id})
-      assert %{"unlocked" => true, "path" => "file.fbx"} = json_response(conn, 200)
+      %{"id" => lock_id} = json_response(create_conn, 201)
+
+      conn = delete(conn, "/api/v1/locks/#{lock_id}")
+      assert %{"unlocked" => true, "id" => ^lock_id} = json_response(conn, 200)
     end
   end
 end
