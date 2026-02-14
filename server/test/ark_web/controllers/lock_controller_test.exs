@@ -1,9 +1,6 @@
 defmodule ArkWeb.LockControllerTest do
   use ArkWeb.ConnCase, async: true
 
-  alias Ark.Repo
-  alias Ark.Repositories.Repository
-
   setup %{conn: conn} do
     {authed_conn, user, _api_key, _raw_token} =
       setup_authenticated_conn(conn, username: "lockuser")
@@ -11,14 +8,10 @@ defmodule ArkWeb.LockControllerTest do
     {authed_conn2, user2, _api_key2, _raw_token2} =
       setup_authenticated_conn(conn, username: "otheruser")
 
-    {:ok, repo} =
-      Repo.insert(
-        %Repository{owner_id: user.id}
-        |> Repository.create_changeset(%{
-          name: "test-repo",
-          storage_path: "/data/repos/test"
-        })
-      )
+    {repo, _membership} = setup_repository_with_member(user, name: "test-repo")
+
+    # user2 is also a member of the same repo
+    {:ok, _} = Ark.Repositories.add_member(repo.id, user2.id, :write)
 
     {:ok, conn: authed_conn, conn2: authed_conn2, user: user, user2: user2, repo: repo}
   end
@@ -58,12 +51,35 @@ defmodule ArkWeb.LockControllerTest do
     end
 
     test "returns 403 without lock scope", %{repo: repo} do
-      {readonly_conn, _user, _key, _token} =
+      {readonly_conn, user, _key, _token} =
         setup_authenticated_conn(build_conn(), scopes: [:repo_read])
+
+      {:ok, _} = Ark.Repositories.add_member(repo.id, user.id, :write)
 
       conn = post(readonly_conn, locks_path(repo.id), %{path: "file.fbx"})
 
       assert json_response(conn, 403)
+    end
+
+    test "returns 404 for non-existent repository", %{conn: conn} do
+      fake_id = Ecto.UUID.generate()
+      conn = post(conn, locks_path(fake_id), %{path: "file.fbx"})
+
+      assert %{"error" => "not_found", "reason" => "repository_not_found"} =
+               json_response(conn, 404)
+    end
+
+    test "returns 403 when user is not a member of the repository", %{conn: conn} do
+      {_other_conn, other_user, _key, _token} =
+        setup_authenticated_conn(build_conn(), username: "outsider")
+
+      # other_user creates a repo but conn's user is NOT a member
+      {other_repo, _} = setup_repository_with_member(other_user, name: "private-repo")
+
+      conn = post(conn, locks_path(other_repo.id), %{path: "file.fbx"})
+
+      assert %{"error" => "forbidden", "reason" => "repository_access_denied"} =
+               json_response(conn, 403)
     end
   end
 

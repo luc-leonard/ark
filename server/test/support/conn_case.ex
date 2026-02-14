@@ -69,4 +69,36 @@ defmodule ArkWeb.ConnCase do
 
     {authed_conn, user, api_key, raw_token}
   end
+
+  @doc """
+  Creates a repository with the given user as a member.
+
+  Returns `{repository, membership}`.
+
+  ## Options
+
+    * `:role` - membership role, defaults to `:write`
+    * `:name` - repository name, defaults to a unique string
+  """
+  def setup_repository_with_member(user, opts \\ []) do
+    alias Ark.Repo
+    alias Ark.Repositories
+    alias Ark.Repositories.Repository
+
+    role = Keyword.get(opts, :role, :write)
+    name = Keyword.get(opts, :name, "repo_#{System.unique_integer([:positive])}")
+
+    {:ok, repo} =
+      Repo.insert(
+        %Repository{owner_id: user.id}
+        |> Repository.create_changeset(%{
+          name: name,
+          storage_path: "/data/repos/#{name}"
+        })
+      )
+
+    {:ok, membership} = Repositories.add_member(repo.id, user.id, role)
+
+    {repo, membership}
+  end
 end

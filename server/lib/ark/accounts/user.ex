@@ -11,6 +11,7 @@ defmodule Ark.Accounts.User do
 
     has_many :api_keys, Ark.Accounts.ApiKey
     has_many :repositories, Ark.Repositories.Repository, foreign_key: :owner_id
+    has_many :repository_memberships, Ark.Repositories.Member
 
     timestamps()
   end

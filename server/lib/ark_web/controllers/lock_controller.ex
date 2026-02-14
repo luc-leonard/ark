@@ -1,20 +1,24 @@
 defmodule ArkWeb.LockController do
   use ArkWeb, :controller
 
+  plug ArkWeb.Plugs.LoadRepository
   plug ArkWeb.Plugs.RequireScope, :lock when action in [:create, :delete]
 
-  def index(conn, %{"repository_id" => repository_id}) do
+  def index(conn, _params) do
+    repository = conn.assigns.repository
+
     locks =
-      Ark.LockManager.list_locks(repository_id)
+      Ark.LockManager.list_locks(repository.id)
       |> Enum.map(&%{id: &1.id, path: &1.path, user_id: &1.user_id, locked_at: &1.inserted_at})
 
     json(conn, %{data: locks})
   end
 
-  def create(conn, %{"repository_id" => repository_id, "path" => path}) do
+  def create(conn, %{"path" => path}) do
     user = conn.assigns.current_user
+    repository = conn.assigns.repository
 
-    case Ark.LockManager.acquire(repository_id, path, user.id) do
+    case Ark.LockManager.acquire(repository.id, path, user.id) do
       {:ok, lock} ->
         conn
         |> put_status(:created)
