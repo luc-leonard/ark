@@ -71,7 +71,7 @@ defmodule Ark.Versioning.RevisionTest do
           |> Revision.create_changeset(%{revision_number: 1, message: "dup"})
         )
 
-      assert %{repository_id: ["has already been taken"]} = errors_on(changeset)
+      assert %{revision_number: ["has already been taken"]} = errors_on(changeset)
     end
   end
 end

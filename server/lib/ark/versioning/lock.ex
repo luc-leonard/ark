@@ -23,6 +23,6 @@ defmodule Ark.Versioning.Lock do
     |> validate_relative_path(:path)
     |> foreign_key_constraint(:repository_id)
     |> foreign_key_constraint(:user_id)
-    |> unique_constraint([:repository_id, :path])
+    |> unique_constraint([:repository_id, :path], error_key: :path, message: "is already locked")
   end
 end

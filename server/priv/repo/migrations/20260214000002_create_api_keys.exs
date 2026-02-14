@@ -22,5 +22,6 @@ defmodule Ark.Repo.Migrations.CreateApiKeys do
     create unique_index(:api_keys, [:key_hash])
     create unique_index(:api_keys, [:auto_rotated_key_hash])
     create index(:api_keys, [:user_id])
+    create index(:api_keys, [:expires_at])
   end
 end

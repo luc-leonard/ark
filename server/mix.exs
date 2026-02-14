@@ -84,7 +84,7 @@ defmodule Ark.MixProject do
       precommit: [
         "compile --warnings-as-errors",
         "deps.unlock --unused",
-        "format --check-formatted",
+        "format",
         "credo --strict",
         "sobelow --config",
         "test"

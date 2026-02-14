@@ -25,6 +25,6 @@ defmodule Ark.Versioning.Revision do
     |> validate_number(:revision_number, greater_than: 0)
     |> foreign_key_constraint(:repository_id)
     |> foreign_key_constraint(:author_id)
-    |> unique_constraint([:repository_id, :revision_number])
+    |> unique_constraint([:repository_id, :revision_number], error_key: :revision_number)
   end
 end

@@ -70,7 +70,7 @@ defmodule Ark.Versioning.LockTest do
           |> Lock.create_changeset(%{path: "models/character.fbx"})
         )
 
-      assert %{repository_id: ["has already been taken"]} = errors_on(changeset)
+      assert %{path: ["is already locked"]} = errors_on(changeset)
     end
   end
 end
