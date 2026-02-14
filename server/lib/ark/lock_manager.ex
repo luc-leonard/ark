@@ -83,7 +83,7 @@ defmodule Ark.LockManager do
   end
 
   defp unique_violation?(errors) do
-    Keyword.has_key?(errors, :repository_id)
+    Keyword.has_key?(errors, :path)
   end
 
   defp lock_query(repository_id, path) do
