@@ -1,4 +1,6 @@
 defmodule ArkWeb do
+  use Boundary, deps: [Ark.Accounts, Ark.Repositories, Ark.Locking, Ark.Repo], exports: [Endpoint]
+
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, components, channels, and so on.

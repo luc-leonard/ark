@@ -134,9 +134,11 @@ defmodule ArkWeb.LockControllerTest do
       # Create another repo where user is also a member
       {other_repo, _} = setup_repository_with_member(user, name: "other-repo")
 
-      # Try to delete repo's lock via other_repo's endpoint — should be treated as not found
+      # Try to delete repo's lock via other_repo's endpoint — should return 404
       del_conn = delete(conn, lock_path(other_repo.id, lock_id))
-      assert %{"unlocked" => true} = json_response(del_conn, 200)
+
+      assert %{"error" => "not_found", "reason" => "lock_not_found"} =
+               json_response(del_conn, 404)
 
       # Verify the lock still exists on the original repo
       list_conn = get(conn, locks_path(repo.id))
@@ -150,6 +152,30 @@ defmodule ArkWeb.LockControllerTest do
 
       assert %{"error" => "bad_request", "reason" => "missing_path"} =
                json_response(conn, 400)
+    end
+
+    test "returns 422 with details for absolute path", %{conn: conn, repo: repo} do
+      conn = post(conn, locks_path(repo.id), %{path: "/etc/passwd"})
+
+      assert %{"error" => "validation_failed", "details" => %{"path" => [msg]}} =
+               json_response(conn, 422)
+
+      assert msg =~ "relative path"
+    end
+
+    test "returns 422 with details for path traversal", %{conn: conn, repo: repo} do
+      conn = post(conn, locks_path(repo.id), %{path: "models/../../etc/passwd"})
+
+      assert %{"error" => "validation_failed", "details" => %{"path" => [msg]}} =
+               json_response(conn, 422)
+
+      assert msg =~ "path traversal"
+    end
+
+    test "returns normalized path in response", %{conn: conn, repo: repo} do
+      conn = post(conn, locks_path(repo.id), %{path: "./models//hero.fbx"})
+
+      assert %{"locked" => true, "path" => "models/hero.fbx"} = json_response(conn, 201)
     end
   end
 end

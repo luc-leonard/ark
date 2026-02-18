@@ -15,6 +15,7 @@ defmodule Ark.DataCase do
   """
 
   use ExUnit.CaseTemplate
+  use Boundary, check: [in: false, out: false]
 
   alias Ecto.Adapters.SQL.Sandbox
 

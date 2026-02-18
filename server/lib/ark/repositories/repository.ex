@@ -16,7 +16,7 @@ defmodule Ark.Repositories.Repository do
 
     has_many :members, Ark.Repositories.Member
     has_many :revisions, Ark.Versioning.Revision
-    has_many :locks, Ark.Versioning.Lock
+    has_many :locks, Ark.Locking.Lock
 
     timestamps()
   end

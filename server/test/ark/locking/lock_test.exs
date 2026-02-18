@@ -1,9 +1,9 @@
-defmodule Ark.Versioning.LockTest do
+defmodule Ark.Locking.LockTest do
   use Ark.DataCase, async: true
 
   alias Ark.Accounts.User
+  alias Ark.Locking.Lock
   alias Ark.Repositories.Repository
-  alias Ark.Versioning.Lock
 
   setup do
     {:ok, user} = Repo.insert(User.create_changeset(%User{}, %{username: "locker"}))

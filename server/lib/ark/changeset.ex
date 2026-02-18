@@ -1,6 +1,8 @@
 defmodule Ark.Changeset do
   @moduledoc false
 
+  use Boundary, deps: [], exports: []
+
   import Ecto.Changeset
 
   @path_traversal_pattern ~r"(^|/)\.\.(/|$)"

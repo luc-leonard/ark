@@ -37,6 +37,13 @@ defmodule Ark.AccountsTest do
     test "returns error on invalid attrs", %{user: user} do
       assert {:error, %Ecto.Changeset{}} = Accounts.create_api_key(user, %{})
     end
+
+    test "rejects invalid scopes", %{user: user} do
+      attrs = %{valid_key_attrs() | scopes: [:banana]}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Accounts.create_api_key(user, attrs)
+      assert {"is invalid", _} = changeset.errors[:scopes]
+    end
   end
 
   describe "authenticate_by_api_key/1" do
