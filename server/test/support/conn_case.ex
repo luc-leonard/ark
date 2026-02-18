@@ -35,4 +35,63 @@ defmodule ArkWeb.ConnCase do
     Ark.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Creates a user with an API key and returns
+  `{conn_with_auth_header, user, api_key, raw_token}`.
+
+  ## Options
+
+    * `:scopes` - list of scopes, defaults to `[:repo_read, :repo_write, :lock]`
+    * `:username` - username, defaults to a unique string
+  """
+  def setup_authenticated_conn(conn, opts \\ []) do
+    alias Ark.Accounts
+
+    scopes = Keyword.get(opts, :scopes, [:repo_read, :repo_write, :lock])
+    username = Keyword.get(opts, :username, "user_#{System.unique_integer([:positive])}")
+
+    {:ok, user} = Accounts.create_user(%{username: username})
+
+    {:ok, api_key, raw_token} =
+      Accounts.create_api_key(user, %{
+        name: "test-key",
+        scopes: scopes,
+        expires_at: DateTime.utc_now() |> DateTime.add(30, :day) |> DateTime.truncate(:second)
+      })
+
+    authed_conn =
+      conn
+      |> Plug.Conn.put_req_header("authorization", "Bearer " <> raw_token)
+      |> Plug.Conn.put_req_header("content-type", "application/json")
+
+    {authed_conn, user, api_key, raw_token}
+  end
+
+  @doc """
+  Creates a repository with the given user as a member.
+
+  Returns `{repository, membership}`.
+
+  ## Options
+
+    * `:role` - membership role, defaults to `:write`
+    * `:name` - repository name, defaults to a unique string
+  """
+  def setup_repository_with_member(user, opts \\ []) do
+    alias Ark.Repositories
+
+    role = Keyword.get(opts, :role, :write)
+    name = Keyword.get(opts, :name, "repo_#{System.unique_integer([:positive])}")
+
+    {:ok, repo} =
+      Repositories.create_repository(user.id, %{
+        name: name,
+        storage_path: "/data/repos/#{name}"
+      })
+
+    {:ok, membership} = Repositories.add_member(repo.id, user.id, role)
+
+    {repo, membership}
+  end
 end

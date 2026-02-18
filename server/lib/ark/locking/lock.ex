@@ -1,4 +1,4 @@
-defmodule Ark.Versioning.Lock do
+defmodule Ark.Locking.Lock do
   use Ecto.Schema
   import Ecto.Changeset
   import Ark.Changeset
