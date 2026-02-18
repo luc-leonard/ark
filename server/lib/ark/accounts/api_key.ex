@@ -46,4 +46,9 @@ defmodule Ark.Accounts.ApiKey do
     |> validate_length(:auto_rotated_key_prefix, is: 8)
     |> unique_constraint(:auto_rotated_key_hash)
   end
+
+  @spec has_scope?(%__MODULE__{}, atom()) :: boolean()
+  def has_scope?(%__MODULE__{scopes: scopes}, scope) when is_atom(scope) do
+    scope in scopes
+  end
 end

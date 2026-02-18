@@ -14,8 +14,5 @@ defmodule Ark.Accounts do
     to: Ark.Accounts.Queries.AuthenticateByApiKey,
     as: :call
 
-  @spec has_scope?(ApiKey.t(), atom()) :: boolean()
-  def has_scope?(%ApiKey{scopes: scopes}, scope) when is_atom(scope) do
-    scope in scopes
-  end
+  defdelegate has_scope?(api_key, scope), to: ApiKey
 end
