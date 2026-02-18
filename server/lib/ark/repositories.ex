@@ -5,6 +5,10 @@ defmodule Ark.Repositories do
 
   use Boundary, deps: [Ark.Repo, Ark.Changeset], exports: [Repository, Member]
 
+  defdelegate create_repository(owner_id, attrs),
+    to: Ark.Repositories.Operations.CreateRepository,
+    as: :call
+
   defdelegate get_repository(id), to: Ark.Repositories.Queries.GetRepository, as: :call
 
   defdelegate get_member(repository_id, user_id),

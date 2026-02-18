@@ -19,9 +19,9 @@ defmodule ArkWeb.Plugs.RequireScope do
 
   @impl true
   def call(conn, required_scope) do
-    api_key = conn.assigns[:current_api_key]
+    api_key = conn.assigns.current_api_key
 
-    if api_key && Ark.Accounts.has_scope?(api_key, required_scope) do
+    if Ark.Accounts.has_scope?(api_key, required_scope) do
       conn
     else
       conn

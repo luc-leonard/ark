@@ -47,13 +47,11 @@ defmodule ArkWeb.ConnCase do
   """
   def setup_authenticated_conn(conn, opts \\ []) do
     alias Ark.Accounts
-    alias Ark.Accounts.User
-    alias Ark.Repo
 
     scopes = Keyword.get(opts, :scopes, [:repo_read, :repo_write, :lock])
     username = Keyword.get(opts, :username, "user_#{System.unique_integer([:positive])}")
 
-    {:ok, user} = Repo.insert(User.create_changeset(%User{}, %{username: username}))
+    {:ok, user} = Accounts.create_user(%{username: username})
 
     {:ok, api_key, raw_token} =
       Accounts.create_api_key(user, %{
@@ -81,21 +79,16 @@ defmodule ArkWeb.ConnCase do
     * `:name` - repository name, defaults to a unique string
   """
   def setup_repository_with_member(user, opts \\ []) do
-    alias Ark.Repo
     alias Ark.Repositories
-    alias Ark.Repositories.Repository
 
     role = Keyword.get(opts, :role, :write)
     name = Keyword.get(opts, :name, "repo_#{System.unique_integer([:positive])}")
 
     {:ok, repo} =
-      Repo.insert(
-        %Repository{owner_id: user.id}
-        |> Repository.create_changeset(%{
-          name: name,
-          storage_path: "/data/repos/#{name}"
-        })
-      )
+      Repositories.create_repository(user.id, %{
+        name: name,
+        storage_path: "/data/repos/#{name}"
+      })
 
     {:ok, membership} = Repositories.add_member(repo.id, user.id, role)
 
