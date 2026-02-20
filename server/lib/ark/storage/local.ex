@@ -125,22 +125,35 @@ defmodule Ark.Storage.Local do
   def get_stream(hash, chunk_size) do
     root = root_path()
 
-    with :ok <- validate_hash(hash),
-         {:ok, fd} <- open_blob(hash, root) do
-      stream =
-        Stream.resource(
-          fn -> fd end,
-          fn fd ->
-            case :file.read(fd, chunk_size) do
-              {:ok, data} -> {[data], fd}
-              :eof -> {:halt, fd}
-              {:error, reason} -> raise "I/O error reading blob: #{:file.format_error(reason)}"
-            end
-          end,
-          &:file.close/1
-        )
+    with :ok <- validate_hash(hash) do
+      path = blob_path(hash, root)
 
-      {:ok, stream}
+      if File.exists?(path) do
+        stream =
+          Stream.resource(
+            fn ->
+              case :file.open(path, [:read, :raw, :binary]) do
+                {:ok, fd} ->
+                  fd
+
+                {:error, reason} ->
+                  raise "Cannot open blob #{hash}: #{:file.format_error(reason)}"
+              end
+            end,
+            fn fd ->
+              case :file.read(fd, chunk_size) do
+                {:ok, data} -> {[data], fd}
+                :eof -> {:halt, fd}
+                {:error, reason} -> raise "I/O error reading blob: #{:file.format_error(reason)}"
+              end
+            end,
+            &:file.close/1
+          )
+
+        {:ok, stream}
+      else
+        {:error, :not_found}
+      end
     end
   end
 
@@ -169,14 +182,6 @@ defmodule Ark.Storage.Local do
   end
 
   # -- Private ---------------------------------------------------------------
-
-  defp open_blob(hash, root) do
-    case :file.open(blob_path(hash, root), [:read, :raw, :binary]) do
-      {:ok, fd} -> {:ok, fd}
-      {:error, :enoent} -> {:error, :not_found}
-      {:error, reason} -> {:error, reason}
-    end
-  end
 
   defp blob_path(hash, root) do
     <<prefix::binary-size(2), rest::binary>> = hash
