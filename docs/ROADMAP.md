@@ -68,3 +68,9 @@
 
 - [ ] **Delta sync**
   - Ne transférer que les différences quand c'est possible
+
+- [ ] **Storage ops (processes dédiés)**
+  - Throttling I/O disque via pool de workers (éviter de saturer le FS)
+  - Cache ETS des hashes connus (court-circuiter les hits disque sur `exists?`)
+  - GC des blobs orphelins (GenServer background, purge des blobs non référencés)
+  - Vérification d'intégrité périodique (Task récurrent, re-hash + alerte)

@@ -4,10 +4,12 @@ defmodule Ark.Application do
   @moduledoc false
 
   use Application
-  use Boundary, top_level?: true, deps: [ArkWeb]
+  use Boundary, top_level?: true, deps: [Ark.Storage, ArkWeb]
 
   @impl true
   def start(_type, _args) do
+    Ark.Storage.purge_stale_tmp!()
+
     children = [
       ArkWeb.Telemetry,
       Ark.Repo,

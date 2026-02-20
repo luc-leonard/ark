@@ -75,6 +75,30 @@ defmodule ArkWeb.Telemetry do
           "The time the connection spent waiting before being checked out for the query"
       ),
 
+      # Storage Metrics
+      summary("ark.storage.store.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to store a blob (write + hash + rename)"
+      ),
+      summary("ark.storage.get.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to open a blob stream"
+      ),
+      summary("ark.storage.verify.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to verify blob integrity (full re-hash)"
+      ),
+      summary("ark.storage.delete.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to delete a blob"
+      ),
+      counter("ark.storage.store.exception.duration",
+        description: "Count of storage write failures"
+      ),
+      counter("ark.storage.verify.exception.duration",
+        description: "Count of storage verify failures"
+      ),
+
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),

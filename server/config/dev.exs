@@ -50,6 +50,8 @@ config :ark, ArkWeb.Endpoint,
 # different ports.
 
 # Enable dev routes for dashboard and mailbox
+config :ark, Ark.Storage.Local, root_path: "priv/storage"
+
 config :ark, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
