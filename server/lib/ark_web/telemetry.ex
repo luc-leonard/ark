@@ -92,10 +92,14 @@ defmodule ArkWeb.Telemetry do
         unit: {:native, :millisecond},
         description: "Time to delete a blob"
       ),
-      counter("ark.storage.store.exception.duration",
+      counter("ark.storage.store.exceptions",
+        event_name: [:ark, :storage, :store, :exception],
+        measurement: :duration,
         description: "Count of storage write failures"
       ),
-      counter("ark.storage.verify.exception.duration",
+      counter("ark.storage.verify.exceptions",
+        event_name: [:ark, :storage, :verify, :exception],
+        measurement: :duration,
         description: "Count of storage verify failures"
       ),
 

@@ -25,48 +25,18 @@ defmodule Ark.Storage do
 
   @spec store_stream(Enumerable.t()) :: {:ok, String.t()} | {:error, term()}
   def store_stream(enumerable) do
-    :telemetry.span([:ark, :storage, :store], %{}, fn ->
-      result = @backend.store_stream(enumerable)
-
-      metadata =
-        case result do
-          {:ok, hash} -> %{hash: hash}
-          {:error, reason} -> %{error: reason}
-        end
-
-      {result, metadata}
-    end)
+    with_telemetry(:store, %{}, fn -> @backend.store_stream(enumerable) end)
   end
 
   @spec get_stream(String.t()) ::
           {:ok, Enumerable.t()} | {:error, :not_found | :invalid_hash | term()}
   def get_stream(hash) do
-    :telemetry.span([:ark, :storage, :get], %{hash: hash}, fn ->
-      result = @backend.get_stream(hash)
-
-      metadata =
-        case result do
-          {:ok, _} -> %{hash: hash}
-          {:error, reason} -> %{hash: hash, error: reason}
-        end
-
-      {result, metadata}
-    end)
+    with_telemetry(:get, %{hash: hash}, fn -> @backend.get_stream(hash) end)
   end
 
   @spec verify(String.t()) :: :ok | {:error, :not_found | :invalid_hash | :integrity_error}
   def verify(hash) do
-    :telemetry.span([:ark, :storage, :verify], %{hash: hash}, fn ->
-      result = @backend.verify(hash)
-
-      metadata =
-        case result do
-          :ok -> %{hash: hash}
-          {:error, reason} -> %{hash: hash, error: reason}
-        end
-
-      {result, metadata}
-    end)
+    with_telemetry(:verify, %{hash: hash}, fn -> @backend.verify(hash) end)
   end
 
   @spec exists?(String.t()) :: boolean()
@@ -74,19 +44,30 @@ defmodule Ark.Storage do
 
   @spec delete(String.t()) :: :ok | {:error, :not_found | :invalid_hash | term()}
   def delete(hash) do
-    :telemetry.span([:ark, :storage, :delete], %{hash: hash}, fn ->
-      result = @backend.delete(hash)
+    with_telemetry(:delete, %{hash: hash}, fn -> @backend.delete(hash) end)
+  end
 
-      metadata =
-        case result do
-          :ok -> %{hash: hash}
-          {:error, reason} -> %{hash: hash, error: reason}
-        end
+  @doc false
+  @spec startup_cleanup :: :ok
+  def startup_cleanup do
+    if function_exported?(@backend, :purge_stale_tmp!, 1) do
+      @backend.purge_stale_tmp!(3_600)
+    end
 
-      {result, metadata}
+    :ok
+  end
+
+  # -- Telemetry helpers -------------------------------------------------------
+
+  defp with_telemetry(event, metadata, fun) do
+    :telemetry.span([:ark, :storage, event], metadata, fn ->
+      result = fun.()
+      {result, stop_metadata(result, metadata)}
     end)
   end
 
-  @spec purge_stale_tmp!(non_neg_integer()) :: :ok
-  defdelegate purge_stale_tmp!(max_age_s \\ 3_600), to: @backend
+  defp stop_metadata({:ok, hash}, meta) when is_binary(hash), do: Map.put(meta, :hash, hash)
+  defp stop_metadata({:ok, _}, meta), do: meta
+  defp stop_metadata(:ok, meta), do: meta
+  defp stop_metadata({:error, reason}, meta), do: Map.put(meta, :error, reason)
 end

@@ -8,10 +8,9 @@ defmodule Ark.Application do
 
   @impl true
   def start(_type, _args) do
-    Ark.Storage.purge_stale_tmp!()
-
     children = [
       ArkWeb.Telemetry,
+      {Task, &Ark.Storage.startup_cleanup/0},
       Ark.Repo,
       {DNSCluster, query: Application.get_env(:ark, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ark.PubSub},
