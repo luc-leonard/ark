@@ -250,30 +250,57 @@ defmodule Ark.Storage.Local do
 
   # Best-effort fsync on the parent directory to flush the new directory entry.
   # After rename succeeds the blob is already on disk — this only guards against
-  # metadata loss on power failure. Silently ignored on platforms that don't
-  # support fsync on directories (WSL2, some FUSE mounts).
+  # metadata loss on power failure. Logged on failure so admins can investigate
+  # (WSL2 and some FUSE mounts don't support fsync on directories).
   defp sync_dir(path) do
-    with {:ok, fd} <- :file.open(path, [:read, :raw]) do
-      :file.sync(fd)
-      :file.close(fd)
+    case :file.open(path, [:read, :raw]) do
+      {:ok, fd} ->
+        case :file.sync(fd) do
+          :ok ->
+            :ok
+
+          {:error, reason} ->
+            emit_sync_dir_failure(path, reason)
+        end
+
+        :file.close(fd)
+
+      {:error, reason} ->
+        emit_sync_dir_failure(path, reason)
     end
 
     :ok
   end
 
+  defp emit_sync_dir_failure(path, reason) do
+    Logger.debug("fsync failed on directory #{path}: #{:file.format_error(reason)}")
+
+    :telemetry.execute(
+      [:ark, :storage, :sync_dir_failed],
+      %{},
+      %{path: path, reason: reason}
+    )
+  end
+
   # sobelow_skip ["Traversal.FileModule"]
   defp place_blob(tmp, hash, root) do
     path = blob_path(hash, root)
-    dir = Path.dirname(path)
 
-    with :ok <- File.mkdir_p(dir),
-         :ok <- File.rename(tmp, path),
-         :ok <- sync_dir(dir) do
+    if File.exists?(path) do
+      File.rm(tmp)
       {:ok, hash}
     else
-      {:error, reason} ->
-        File.rm(tmp)
-        {:error, reason}
+      dir = Path.dirname(path)
+
+      with :ok <- File.mkdir_p(dir),
+           :ok <- File.rename(tmp, path),
+           :ok <- sync_dir(dir) do
+        {:ok, hash}
+      else
+        {:error, reason} ->
+          File.rm(tmp)
+          {:error, reason}
+      end
     end
   end
 end

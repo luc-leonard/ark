@@ -88,6 +88,10 @@ defmodule ArkWeb.Telemetry do
         unit: {:native, :millisecond},
         description: "Time to verify blob integrity (full re-hash)"
       ),
+      summary("ark.storage.exists.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to check blob existence"
+      ),
       summary("ark.storage.delete.stop.duration",
         unit: {:native, :millisecond},
         description: "Time to delete a blob"
@@ -101,6 +105,9 @@ defmodule ArkWeb.Telemetry do
         event_name: [:ark, :storage, :verify, :exception],
         measurement: :duration,
         description: "Count of storage verify failures"
+      ),
+      counter("ark.storage.sync_dir_failed",
+        description: "Count of directory fsync failures (potential durability risk)"
       ),
 
       # VM Metrics

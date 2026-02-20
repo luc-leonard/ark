@@ -16,6 +16,7 @@ defmodule Ark.Storage do
   - `[:ark, :storage, :store]` — metadata: `%{hash: hash}` on success
   - `[:ark, :storage, :get]` — metadata: `%{hash: hash}`
   - `[:ark, :storage, :verify]` — metadata: `%{hash: hash}`
+  - `[:ark, :storage, :exists]` — metadata: `%{hash: hash, hit: boolean}`
   - `[:ark, :storage, :delete]` — metadata: `%{hash: hash}`
   """
 
@@ -40,7 +41,9 @@ defmodule Ark.Storage do
   end
 
   @spec exists?(String.t()) :: boolean()
-  defdelegate exists?(hash), to: @backend
+  def exists?(hash) do
+    with_telemetry(:exists, %{hash: hash}, fn -> @backend.exists?(hash) end)
+  end
 
   @spec delete(String.t()) :: :ok | {:error, :not_found | :invalid_hash | term()}
   def delete(hash) do
@@ -70,4 +73,5 @@ defmodule Ark.Storage do
   defp stop_metadata({:ok, _}, meta), do: meta
   defp stop_metadata(:ok, meta), do: meta
   defp stop_metadata({:error, reason}, meta), do: Map.put(meta, :error, reason)
+  defp stop_metadata(bool, meta) when is_boolean(bool), do: Map.put(meta, :hit, bool)
 end
