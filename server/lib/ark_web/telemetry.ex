@@ -75,6 +75,41 @@ defmodule ArkWeb.Telemetry do
           "The time the connection spent waiting before being checked out for the query"
       ),
 
+      # Storage Metrics
+      summary("ark.storage.store.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to store a blob (write + hash + rename)"
+      ),
+      summary("ark.storage.get.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to open a blob stream"
+      ),
+      summary("ark.storage.verify.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to verify blob integrity (full re-hash)"
+      ),
+      summary("ark.storage.exists.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to check blob existence"
+      ),
+      summary("ark.storage.delete.stop.duration",
+        unit: {:native, :millisecond},
+        description: "Time to delete a blob"
+      ),
+      counter("ark.storage.store.exceptions",
+        event_name: [:ark, :storage, :store, :exception],
+        measurement: :duration,
+        description: "Count of storage write failures"
+      ),
+      counter("ark.storage.verify.exceptions",
+        event_name: [:ark, :storage, :verify, :exception],
+        measurement: :duration,
+        description: "Count of storage verify failures"
+      ),
+      counter("ark.storage.sync_dir_failed",
+        description: "Count of directory fsync failures (potential durability risk)"
+      ),
+
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),

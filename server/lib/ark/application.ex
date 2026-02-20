@@ -4,12 +4,13 @@ defmodule Ark.Application do
   @moduledoc false
 
   use Application
-  use Boundary, top_level?: true, deps: [ArkWeb]
+  use Boundary, top_level?: true, deps: [Ark.Storage, ArkWeb]
 
   @impl true
   def start(_type, _args) do
     children = [
       ArkWeb.Telemetry,
+      {Task, &Ark.Storage.startup_cleanup/0},
       Ark.Repo,
       {DNSCluster, query: Application.get_env(:ark, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ark.PubSub},

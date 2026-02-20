@@ -68,6 +68,7 @@ docker-compose up             # Lance PostgreSQL 16 + serveur Phoenix
 
 ## Conventions
 
+- Utiliser `Application.compile_env` (pas `get_env`) pour résoudre les modules de behaviour — le mock se configure dans `config/test.exs` et se résout à la compilation
 - Utiliser `:req` (Req) pour les requêtes HTTP — jamais httpoison/tesla/httpc
 - `mix precommit` obligatoire avant chaque commit
 - Ne jamais imbriquer plusieurs modules dans le même fichier

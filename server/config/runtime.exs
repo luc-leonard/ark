@@ -56,6 +56,12 @@ if config_env() == :prod do
 
   config :ark, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  storage_root =
+    System.get_env("ARK_STORAGE_PATH") ||
+      raise("environment variable ARK_STORAGE_PATH is missing.")
+
+  config :ark, Ark.Storage.Local, root_path: storage_root
+
   config :ark, ArkWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

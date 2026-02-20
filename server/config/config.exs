@@ -11,6 +11,8 @@ config :ark,
   ecto_repos: [Ark.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+config :ark, Ark.Storage, backend: Ark.Storage.Local
+
 # Configure the endpoint
 config :ark, ArkWeb.Endpoint,
   url: [host: "localhost"],

@@ -49,7 +49,7 @@ defmodule Ark.Locking.Operations.AcquireLock do
 
   defp unique_violation?(errors) do
     case Keyword.get_values(errors, :path) do
-      [{msg, _} | _] -> msg =~ "already locked"
+      [{_msg, meta} | _] -> meta[:constraint] == :unique
       _ -> false
     end
   end
